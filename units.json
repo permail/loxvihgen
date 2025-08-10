@@ -1,0 +1,9 @@
+{
+    "overrides": [
+        {"attribute": "temp", "unit": "°C"},
+        {"attribute": "humidity", "unit": "%"},
+        {"attribute": "visibility", "unit": "m"},
+        {"attribute": "wind_speed", "unit": "m/s"},
+        {"attribute": "wind_gust", "unit": "m/s"}
+    ]
+}
