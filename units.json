@@ -1,9 +1,33 @@
 {
     "overrides": [
+        {"attribute": "dew_point", "unit": "°C"},
+        {"attribute": "feels_like", "unit": "°C"},
+        {"attribute": "feels_like day", "unit": "°C"},
+        {"attribute": "feels_like eve", "unit": "°C"},
+        {"attribute": "feels_like morn", "unit": "°C"},
+        {"attribute": "feels_like night", "unit": "°C"},
+        {"attribute": "pressure", "unit": "mbar"},
         {"attribute": "temp", "unit": "°C"},
+        {"attribute": "temp day", "unit": "°C"},
+        {"attribute": "temp eve", "unit": "°C"},
+        {"attribute": "temp max", "unit": "°C"},
+        {"attribute": "temp min", "unit": "°C"},
+        {"attribute": "temp morn", "unit": "°C"},
+        {"attribute": "temp night", "unit": "°C"},
         {"attribute": "humidity", "unit": "%"},
+        {"attribute": "rain", "unit": "mm"},
         {"attribute": "visibility", "unit": "m"},
+        {"attribute": "wind_deg", "unit": "°"},
         {"attribute": "wind_speed", "unit": "m/s"},
-        {"attribute": "wind_gust", "unit": "m/s"}
+        {"attribute": "wind_gust", "unit": "m/s"},
+        {"attribute": "pop", "unit": "%"},
+
+        {"attribute": "day", "unit": "°C"},
+        {"attribute": "eve", "unit": "°C"},
+        {"attribute": "max", "unit": "°C"},
+        {"attribute": "min", "unit": "°C"},
+        {"attribute": "morn", "unit": "°C"},
+        {"attribute": "night", "unit": "°C"}
+
     ]
 }
