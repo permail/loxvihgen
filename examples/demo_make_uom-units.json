@@ -1,120 +1,33 @@
 {
   "overrides": [
-    {
-      "pattern": "switch:0.aenergy.by_minute[]",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.aenergy.minute_ts",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.aenergy.total",
-      "unit": "<v.9> Kilowattstunden"
-    },
-    {
-      "pattern": "switch:0.apower",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.current",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.freq",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.id",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.ret_aenergy.by_minute[]",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.ret_aenergy.minute_ts",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.ret_aenergy.total",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.temperature.tC",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.temperature.tF",
-      "unit": ""
-    },
-    {
-      "pattern": "switch:0.voltage",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.btrelay_rev",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.cfg_rev",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.fs_free",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.fs_size",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.kvs_rev",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.last_sync_ts",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.ram_free",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.ram_min_free",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.ram_size",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.reset_reason",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.schedule_rev",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.unixtime",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.uptime",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.utc_offset",
-      "unit": ""
-    },
-    {
-      "pattern": "sys.webhook_rev",
-      "unit": ""
-    },
-    {
-      "pattern": "wifi.rssi",
-      "unit": ""
-    }
+    {"pattern":"switch:0.aenergy.by_minute[]","unit":""},
+    {"pattern":"switch:0.aenergy.minute_ts","unit":""},
+    {"pattern":"switch:0.aenergy.total","unit":""},
+    {"pattern":"switch:0.apower","unit":""},
+    {"pattern":"switch:0.current","unit":""},
+    {"pattern":"switch:0.freq","unit":""},
+    {"pattern":"switch:0.id","unit":""},
+    {"pattern":"switch:0.ret_aenergy.by_minute[]","unit":""},
+    {"pattern":"switch:0.ret_aenergy.minute_ts","unit":""},
+    {"pattern":"switch:0.ret_aenergy.total","unit":""},
+    {"pattern":"switch:0.temperature.tC","unit":""},
+    {"pattern":"switch:0.temperature.tF","unit":""},
+    {"pattern":"switch:0.voltage","unit":""},
+    {"pattern":"sys.btrelay_rev","unit":""},
+    {"pattern":"sys.cfg_rev","unit":""},
+    {"pattern":"sys.fs_free","unit":""},
+    {"pattern":"sys.fs_size","unit":""},
+    {"pattern":"sys.kvs_rev","unit":""},
+    {"pattern":"sys.last_sync_ts","unit":""},
+    {"pattern":"sys.ram_free","unit":""},
+    {"pattern":"sys.ram_min_free","unit":""},
+    {"pattern":"sys.ram_size","unit":""},
+    {"pattern":"sys.reset_reason","unit":""},
+    {"pattern":"sys.schedule_rev","unit":""},
+    {"pattern":"sys.unixtime","unit":""},
+    {"pattern":"sys.uptime","unit":""},
+    {"pattern":"sys.utc_offset","unit":""},
+    {"pattern":"sys.webhook_rev","unit":""},
+    {"pattern":"wifi.rssi","unit":""}
   ]
 }
