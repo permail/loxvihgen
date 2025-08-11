@@ -83,6 +83,7 @@ import json
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from html import escape as html_escape
@@ -90,7 +91,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 __tool__ = "LoxVIHGen"
-__version__ = "2.0.2"
+__version__ = "2.1.0"
 
 # ===================== Data model =====================
 
@@ -100,7 +101,7 @@ class ObjKey:
 
 @dataclass(frozen=True)
 class ArrIdx:
-    key: str   # array/container name (JSON: list key; XML: parent tag for repeated children)
+    key: str   # container name (JSON: list key; XML: parent tag for repeated children)
     idx: int   # 0-based
 
 PathToken = ObjKey | ArrIdx
@@ -132,75 +133,6 @@ def _count_decimals(val: float) -> int:
     return 0
 
 
-def _collect_array_lengths_json(node: Any, arr_len: Dict[str, int]) -> None:
-    if isinstance(node, dict):
-        for k, v in node.items():
-            if isinstance(v, list):
-                arr_len[k] = max(arr_len.get(k, 0), len(v))
-                for item in v:
-                    _collect_array_lengths_json(item, arr_len)
-            else:
-                _collect_array_lengths_json(v, arr_len)
-    elif isinstance(node, list):
-        for item in node:
-            _collect_array_lengths_json(item, arr_len)
-
-
-def _collect_array_lengths_xml(elem: ET.Element, arr_len: Dict[str, int]) -> None:
-    by_tag: Dict[str, int] = {}
-    children = list(elem)
-    for ch in children:
-        by_tag[ch.tag] = by_tag.get(ch.tag, 0) + 1
-    max_repeats = max(by_tag.values()) if by_tag else 0
-    if max_repeats > 1:
-        arr_len[elem.tag] = max(arr_len.get(elem.tag, 0), max_repeats)
-    for ch in children:
-        _collect_array_lengths_xml(ch, arr_len)
-
-
-def _walk_numeric_leaves_json(node: Any, prefix: List[PathToken]) -> Iterable[Tuple[List[PathToken], float, int]]:
-    if isinstance(node, dict):
-        for k, v in node.items():
-            if isinstance(v, list):
-                for i, item in enumerate(v):
-                    yield from _walk_numeric_leaves_json(item, prefix + [ArrIdx(k, i)])
-            else:
-                yield from _walk_numeric_leaves_json(v, prefix + [ObjKey(k)])
-    elif isinstance(node, list):
-        for i, v in enumerate(node):
-            yield from _walk_numeric_leaves_json(v, prefix + [ArrIdx("$root", i)])
-    else:
-        if _is_number(node):
-            fv = float(node)
-            yield (prefix, fv, _count_decimals(fv))
-
-
-def _walk_numeric_leaves_xml(elem: ET.Element, prefix: List[PathToken]) -> Iterable[Tuple[List[PathToken], float, int]]:
-    children = list(elem)
-    if not children:
-        num = _try_parse_number(elem.text)
-        if num is not None:
-            yield (prefix + [ObjKey(elem.tag)], num, _count_decimals(num))
-        return
-    groups: Dict[str, List[ET.Element]] = {}
-    for ch in children:
-        groups.setdefault(ch.tag, []).append(ch)
-    for tag, group in groups.items():
-        if len(group) == 1:
-            ch = group[0]
-            yield from _walk_numeric_leaves_xml(ch, prefix + [ObjKey(tag)])
-        else:
-            for i, ch in enumerate(group):
-                yield from _walk_numeric_leaves_xml(ch, prefix + [ArrIdx(elem.tag, i)])
-
-
-def _index_width_map(arr_len: Dict[str, int]) -> Dict[str, int]:
-    out: Dict[str, int] = {}
-    for k, n in arr_len.items():
-        out[k] = max(1, len(str(max(0, n - 1))))
-    return out
-
-
 def _xml_escape_attr(s: str) -> str:
     return html_escape(s, quote=True)
 
@@ -212,35 +144,176 @@ def _quoted_key(k: str) -> str:
 def _tag_token(tag: str) -> str:
     return f"&lt;{_xml_escape_attr(tag)}&gt;"
 
-# ===================== Check string builders =====================
+# ===================== Abstract hierarchical source =====================
 
-def build_check_string_json(path: Sequence[PathToken]) -> str:
-    parts: List[str] = []
-    i_quote = "\\i"
-    for t in path:
-        if isinstance(t, ObjKey):
-            parts.append(f"{i_quote}{_quoted_key(t.key)}:{i_quote}")
-        elif isinstance(t, ArrIdx):
-            parts.append(f"{i_quote}{_quoted_key(t.key)}:[{i_quote}")
-            parts.append("\\i{\\i" * (t.idx + 1))
-        else:
-            raise TypeError("unknown token")
-    parts.append("\\v")
-    return "".join(parts)
+class HierSource(ABC):
+    @abstractmethod
+    def iter_numeric_leaves(self) -> Iterable[Tuple[List[PathToken], float, int]]:
+        """Yield (path_tokens, value, decimals). Order must follow input order.
+        `decimals` is the number of fractional digits observed for the leaf.
+        """
+
+    @abstractmethod
+    def index_widths(self) -> Dict[str, int]:
+        """Return zero-padded width per array container key (for titles)."""
+
+    @abstractmethod
+    def build_check_string(self, path: Sequence[PathToken]) -> str:
+        """Return Loxone check string for this path."""
+
+    @staticmethod
+    @abstractmethod
+    def sniff_and_make(text: str) -> "HierSource":
+        """Factory that returns a JSONSource or XMLSource from text."""
+
+# ===================== JSON implementation =====================
+
+class JSONSource(HierSource):
+    def __init__(self, root: Any):
+        self.root = root
+        self._widths = self._calc_widths(root)
+
+    @staticmethod
+    def _calc_widths(node: Any) -> Dict[str, int]:
+        lengths: Dict[str, int] = {}
+        def walk(n: Any) -> None:
+            if isinstance(n, dict):
+                for k, v in n.items():
+                    if isinstance(v, list):
+                        lengths[k] = max(lengths.get(k, 0), len(v))
+                        for it in v:
+                            walk(it)
+                    else:
+                        walk(v)
+            elif isinstance(n, list):
+                for it in n:
+                    walk(it)
+        walk(node)
+        return {k: max(1, len(str(max(0, ln - 1)))) for k, ln in lengths.items()}
+
+    def iter_numeric_leaves(self) -> Iterable[Tuple[List[PathToken], float, int]]:
+        def walk(n: Any, pref: List[PathToken]):
+            if isinstance(n, dict):
+                for k, v in n.items():
+                    if isinstance(v, list):
+                        for i, it in enumerate(v):
+                            yield from walk(it, pref + [ArrIdx(k, i)])
+                    else:
+                        yield from walk(v, pref + [ObjKey(k)])
+            elif isinstance(n, list):
+                for i, v in enumerate(n):
+                    yield from walk(v, pref + [ArrIdx("$root", i)])
+            else:
+                if _is_number(n):
+                    fv = float(n)
+                    yield (pref, fv, _count_decimals(fv))
+        yield from walk(self.root, [])
+
+    def index_widths(self) -> Dict[str, int]:
+        return dict(self._widths)
+
+    def build_check_string(self, path: Sequence[PathToken]) -> str:
+        parts: List[str] = []
+        i_quote = "\i"
+        for t in path:
+            if isinstance(t, ObjKey):
+                parts.append(f"{i_quote}{_quoted_key(t.key)}:{i_quote}")
+            elif isinstance(t, ArrIdx):
+                if t.key == "$root":
+                    # Jump into anonymous array at root position
+                    parts.append("\i[" + i_quote)
+                else:
+                    parts.append(f"{i_quote}{_quoted_key(t.key)}:[{i_quote}")
+                parts.append("\i{\i" * (t.idx + 1))
+        parts.append("\v")
+        return "".join(parts)
+
+    @staticmethod
+    def sniff_and_make(text: str) -> "JSONSource":
+        return JSONSource(json.loads(text))
+
+# ===================== XML implementation =====================
+
+class XMLSource(HierSource):
+    def __init__(self, root: ET.Element):
+        self.root = root
+        self._widths = self._calc_widths(root)
+
+    @staticmethod
+    def _calc_widths(elem: ET.Element) -> Dict[str, int]:
+        lengths: Dict[str, int] = {}
+        def walk(e: ET.Element):
+            children = list(e)
+            tags: Dict[str, int] = {}
+            for ch in children:
+                tags[ch.tag] = tags.get(ch.tag, 0) + 1
+            max_repeats = max(tags.values()) if tags else 0
+            if max_repeats > 1:
+                lengths[e.tag] = max(lengths.get(e.tag, 0), max_repeats)
+            for ch in children:
+                walk(ch)
+        walk(elem)
+        return {k: max(1, len(str(max(0, ln - 1)))) for k, ln in lengths.items()}
+
+    def iter_numeric_leaves(self) -> Iterable[Tuple[List[PathToken], float, int]]:
+        def walk(e: ET.Element, pref: List[PathToken]):
+            children = list(e)
+            if not children:
+                num = _try_parse_number(e.text)
+                if num is not None:
+                    yield (pref + [ObjKey(e.tag)], num, _count_decimals(num))
+                return
+            groups: Dict[str, List[ET.Element]] = {}
+            for ch in children:
+                groups.setdefault(ch.tag, []).append(ch)
+            for tag, group in groups.items():
+                if len(group) == 1:
+                    yield from walk(group[0], pref + [ObjKey(tag)])
+                else:
+                    for i, ch in enumerate(group):
+                        yield from walk(ch, pref + [ArrIdx(e.tag, i)])
+        yield from walk(self.root, [])
+
+    def index_widths(self) -> Dict[str, int]:
+        return dict(self._widths)
+
+    def build_check_string(self, path: Sequence[PathToken]) -> str:
+        parts: List[str] = []
+        i_quote = "\i"
+        for t in path:
+            if isinstance(t, ObjKey):
+                parts.append(f"{i_quote}{_tag_token(t.key)}{i_quote}")
+            elif isinstance(t, ArrIdx):
+                parts.append((f"{i_quote}{_tag_token(t.key)}{i_quote}") * (t.idx + 1))
+        parts.append("\v")
+        return "".join(parts)
+
+    @staticmethod
+    def sniff_and_make(text: str) -> "XMLSource":
+        return XMLSource(ET.fromstring(text))
+
+# ===================== Unified factories =====================
+
+def sniff_format(text: str) -> str:
+    s = text.lstrip()
+    if s.startswith("<"):
+        return "xml"
+    if s.startswith("{") or s.startswith("["):
+        return "json"
+    try:
+        json.loads(text)
+        return "json"
+    except Exception:
+        try:
+            ET.fromstring(text)
+            return "xml"
+        except Exception:
+            raise ValueError("Input is neither valid JSON nor XML")
 
 
-def build_check_string_xml(path: Sequence[PathToken]) -> str:
-    parts: List[str] = []
-    i_quote = "\\i"
-    for t in path:
-        if isinstance(t, ObjKey):
-            parts.append(f"{i_quote}{_tag_token(t.key)}{i_quote}")
-        elif isinstance(t, ArrIdx):
-            parts.append((f"{i_quote}{_tag_token(t.key)}{i_quote}") * (t.idx + 1))
-        else:
-            raise TypeError("unknown token")
-    parts.append("\\v")
-    return "".join(parts)
+def make_source(text: str) -> HierSource:
+    fmt = sniff_format(text)
+    return JSONSource.sniff_and_make(text) if fmt == "json" else XMLSource.sniff_and_make(text)
 
 # ===================== Rules (overrides) =====================
 
@@ -281,9 +354,7 @@ def load_rules(path: Optional[Path]) -> List[UnitRule]:
 def choose_unit_for(path: Sequence[PathToken], rules: List[UnitRule]) -> Optional[Tuple[str, bool]]:
     if not rules:
         return None
-    reduced: List[str] = []
-    for t in path:
-        reduced.append(t.key)
+    reduced: List[str] = [t.key for t in path if getattr(t, "key", None) and t.key != "$root"]
     best: Tuple[int, int, UnitRule] | None = None
     for r in rules:
         m = len(r.tokens)
@@ -300,33 +371,32 @@ def choose_unit_for(path: Sequence[PathToken], rules: List[UnitRule]) -> Optiona
         return (rule.unit, True)
     return (rule.unit, False)
 
-# ===================== Title & format =====================
-
-def build_title(path: Sequence[PathToken], width_by_key: Dict[str, int], prefix: str, sep: str) -> str:
-    elements: List[str] = []
-    for t in path:
-        if isinstance(t, ArrIdx):
-            w = width_by_key.get(t.key, 1)
-            elements.append(f"{t.key}[{t.idx:0{w}d}]")
-        elif isinstance(t, ObjKey):
-            elements.append(t.key)
-        else:
-            raise TypeError("unknown token")
-    path_str = sep.join(elements)
-    if prefix:
-        return f"{prefix}{sep}{path_str}" if path_str else prefix
-    else:
-        return path_str
-
+# ===================== Titles, signatures, formatting =====================
 
 def path_signature(tokens: Sequence[PathToken]) -> Tuple[str, ...]:
     sig: List[str] = []
     for t in tokens:
         if isinstance(t, ArrIdx):
-            sig.append(f"{t.key}[]")
+            if t.key != "$root":
+                sig.append(f"{t.key}[]")
         elif isinstance(t, ObjKey):
             sig.append(t.key)
     return tuple(sig)
+
+
+def build_title(path: Sequence[PathToken], width_by_key: Dict[str, int], prefix: str, sep: str) -> str:
+    elements: List[str] = []
+    for t in path:
+        if isinstance(t, ArrIdx):
+            if t.key == "$root":
+                elements.append(f"$root[{t.idx:0{width_by_key.get('$root',1)}d}]")
+            else:
+                w = width_by_key.get(t.key, 1)
+                elements.append(f"{t.key}[{t.idx:0{w}d}]")
+        elif isinstance(t, ObjKey):
+            elements.append(t.key)
+    path_str = sep.join(elements)
+    return (f"{prefix}{sep}{path_str}" if prefix and path_str else (prefix or path_str))
 
 
 def format_string_for(path: Sequence[PathToken],
@@ -341,14 +411,11 @@ def format_string_for(path: Sequence[PathToken],
         return f"{base} {unit_override[0]}"
     return base
 
-# ===================== Build commands =====================
+# ===================== Builders using the abstraction =====================
 
-def build_commands_from_json(root: Any, prefix: str, sep: str, unit_rules: List[UnitRule]) -> List[Tuple[str, str, str]]:
-    arr_len: Dict[str, int] = {}
-    _collect_array_lengths_json(root, arr_len)
-    width_by_key = _index_width_map(arr_len)
-
-    leaves = list(_walk_numeric_leaves_json(root, []))
+def build_commands(source: HierSource, prefix: str, sep: str, unit_rules: List[UnitRule]) -> List[Tuple[str, str, str]]:
+    width_by_key = source.index_widths()
+    leaves = list(source.iter_numeric_leaves())
 
     decimals_by_sig: Dict[Tuple[str, ...], int] = {}
     for p, _val, dec in leaves:
@@ -358,62 +425,17 @@ def build_commands_from_json(root: Any, prefix: str, sep: str, unit_rules: List[
     cmds: List[Tuple[str, str, str]] = []
     for p, _val, _dec in leaves:
         title = build_title(p, width_by_key, prefix, sep)
-        check = build_check_string_json(p)
+        check = source.build_check_string(p)
         unit = format_string_for(p, decimals_by_sig, unit_rules)
         cmds.append((title, check, unit))
     return cmds
 
 
-def build_commands_from_xml(root: ET.Element, prefix: str, sep: str, unit_rules: List[UnitRule]) -> List[Tuple[str, str, str]]:
-    arr_len: Dict[str, int] = {}
-    _collect_array_lengths_xml(root, arr_len)
-    width_by_key = _index_width_map(arr_len)
-
-    leaves = list(_walk_numeric_leaves_xml(root, []))
-
-    decimals_by_sig: Dict[Tuple[str, ...], int] = {}
-    for p, _val, dec in leaves:
-        sig = path_signature(p)
-        decimals_by_sig[sig] = max(decimals_by_sig.get(sig, 0), dec)
-
-    cmds: List[Tuple[str, str, str]] = []
-    for p, _val, _dec in leaves:
-        title = build_title(p, width_by_key, prefix, sep)
-        check = build_check_string_xml(p)
-        unit = format_string_for(p, decimals_by_sig, unit_rules)
-        cmds.append((title, check, unit))
-    return cmds
-
-# ===================== Rules skeleton generators =====================
-
-def generate_rules_skeleton_from_json(root: Any) -> str:
+def generate_rules_skeleton(source: HierSource) -> str:
     patterns: List[str] = []
     seen: set[str] = set()
-    for path, _val, _dec in _walk_numeric_leaves_json(root, []):
-        toks: List[str] = []
-        for t in path:
-            toks.append(t.key)
-        pat = ".".join(toks).replace(".$root", "")
-        if pat not in seen:
-            seen.add(pat)
-            patterns.append(pat)
-    patterns.sort()
-    lines = ['{', '  "overrides": [']
-    for i, p in enumerate(patterns):
-        comma = "," if i < len(patterns) - 1 else ""
-        lines.append(f'    {{"pattern":"{p}","unit":""}}{comma}')
-    lines.append('  ]')
-    lines.append('}')
-    return "\n".join(lines)
-
-
-def generate_rules_skeleton_from_xml(root: ET.Element) -> str:
-    patterns: List[str] = []
-    seen: set[str] = set()
-    for path, _val, _dec in _walk_numeric_leaves_xml(root, []):
-        toks: List[str] = []
-        for t in path:
-            toks.append(t.key)
+    for path, _val, _dec in source.iter_numeric_leaves():
+        toks = [t.key for t in path if getattr(t, "key", None) and t.key != "$root"]
         pat = ".".join(toks)
         if pat not in seen:
             seen.add(pat)
@@ -476,7 +498,7 @@ def build_full_metadata(input_path: Optional[Path],
     }
     return json.dumps(meta, separators=(",",":"))
 
-# ===================== Manifest =====================
+# ===================== Manifest & file helpers =====================
 
 def manifest_path(project: str) -> Path:
     return Path(f"{project}.vih.json")
@@ -520,7 +542,6 @@ def load_manifest(project: str) -> Dict[str, Any]:
     try:
         return json.loads(p.read_text(encoding="utf-8"))
     except Exception:
-        # If unreadable, fall back to defaults (do not crash)
         return {
             "project": project,
             "source": {"url": None, "response": None},
@@ -532,24 +553,6 @@ def load_manifest(project: str) -> Dict[str, Any]:
 
 def save_manifest(project: str, data: Dict[str, Any]) -> None:
     manifest_path(project).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-# ===================== Format sniffing =====================
-
-def sniff_format(text: str) -> str:
-    s = text.lstrip()
-    if s.startswith("<"):
-        return "xml"
-    if s.startswith("{") or s.startswith("["):
-        return "json"
-    try:
-        json.loads(text)
-        return "json"
-    except Exception:
-        try:
-            ET.fromstring(text)
-            return "xml"
-        except Exception:
-            raise ValueError("Input is neither valid JSON nor XML")
 
 # ===================== Subcommand impls =====================
 
@@ -604,15 +607,10 @@ def cmd_rules(project: str, force: bool) -> int:
             return 6
         resp_path = guess
     text = resp_path.read_text(encoding="utf-8")
-    fmt = sniff_format(text)
 
     # Build skeleton
-    if fmt == "json":
-        root = json.loads(text)
-        content = generate_rules_skeleton_from_json(root)
-    else:
-        root = ET.fromstring(text)
-        content = generate_rules_skeleton_from_xml(root)
+    source = make_source(text)
+    content = generate_rules_skeleton(source)
 
     rules_path = Path(f"{project}.rules.json")
     if rules_path.exists() and not force:
@@ -644,8 +642,8 @@ def cmd_build(project: str, title: Optional[str], prefixes: List[str], sep: Opti
             return 6
         resp_path = guess
     text = resp_path.read_text(encoding="utf-8")
-    fmt = sniff_format(text)
-    data = json.loads(text) if fmt == "json" else ET.fromstring(text)
+
+    source = make_source(text)
 
     # Resolve rules
     rules_path = Path(m.get("rules") or str(rules_default_path(project)))
@@ -666,9 +664,7 @@ def cmd_build(project: str, title: Optional[str], prefixes: List[str], sep: Opti
     # Build per prefix
     for pref in prefix_list:
         eff_prefix = pref or ""
-        cmds = (build_commands_from_json(data, eff_prefix, eff_sep, unit_rules)
-                if fmt == "json" else
-                build_commands_from_xml(data, eff_prefix, eff_sep, unit_rules))
+        cmds = build_commands(source, eff_prefix, eff_sep, unit_rules)
 
         # Title: include prefix if present
         full_title = f"{eff_prefix} {eff_title}".strip() if eff_prefix else eff_title
