@@ -1,0 +1,15 @@
+{
+  "project": "shelly_plug",
+  "source": {
+    "url": "http://192.168.0.227/rpc/Shelly.GetStatus",
+    "response": "shelly_plug.response.json"
+  },
+  "rules": "shelly_plug.rules.json",
+  "build": {
+    "title": "shelly_plug",
+    "name_separator": " ",
+    "polling_time": 1200,
+    "address_url": "http://192.168.0.227/rpc/Shelly.GetStatus"
+  },
+  "prefixes": []
+}

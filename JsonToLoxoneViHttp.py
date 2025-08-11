@@ -90,7 +90,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 __tool__ = "LoxVIHGen"
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 
 # ===================== Data model =====================
 
@@ -216,22 +216,22 @@ def _tag_token(tag: str) -> str:
 
 def build_check_string_json(path: Sequence[PathToken]) -> str:
     parts: List[str] = []
-    i_quote = "\i"
+    i_quote = "\\i"
     for t in path:
         if isinstance(t, ObjKey):
             parts.append(f"{i_quote}{_quoted_key(t.key)}:{i_quote}")
         elif isinstance(t, ArrIdx):
             parts.append(f"{i_quote}{_quoted_key(t.key)}:[{i_quote}")
-            parts.append("\i{\i" * (t.idx + 1))
+            parts.append("\\i{\\i" * (t.idx + 1))
         else:
             raise TypeError("unknown token")
-    parts.append("\v")
+    parts.append("\\v")
     return "".join(parts)
 
 
 def build_check_string_xml(path: Sequence[PathToken]) -> str:
     parts: List[str] = []
-    i_quote = "\i"
+    i_quote = "\\i"
     for t in path:
         if isinstance(t, ObjKey):
             parts.append(f"{i_quote}{_tag_token(t.key)}{i_quote}")
@@ -239,7 +239,7 @@ def build_check_string_xml(path: Sequence[PathToken]) -> str:
             parts.append((f"{i_quote}{_tag_token(t.key)}{i_quote}") * (t.idx + 1))
         else:
             raise TypeError("unknown token")
-    parts.append("\v")
+    parts.append("\\v")
     return "".join(parts)
 
 # ===================== Rules (overrides) =====================
