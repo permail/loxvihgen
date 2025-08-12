@@ -11,9 +11,9 @@ def test_title_builder_with_indices():
 def test_json_check_string():
     p = Path([ObjKey("a"), ObjKey("b"), ArrIdx("b", 1), ObjKey("c")])
     chk = JSONCheckStringBuilder().build(p)
-    assert '\\i&quot;a&quot;:\\i' in chk and chk.endswith('\v')
+    assert '\\i&quot;a&quot;:\\i' in chk and chk.endswith('\\v')
 
 def test_xml_check_string():
     p = Path([ObjKey("root"), ArrIdx("item", 2), ObjKey("value")])
     chk = XMLCheckStringBuilder().build(p)
-    assert '\\i&lt;root&gt;\\i' in chk and chk.endswith('\v')
+    assert '\\i&lt;root&gt;\\i' in chk and chk.endswith('\\v')

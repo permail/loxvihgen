@@ -66,8 +66,12 @@ class JSONSource(HierSource):
                     yield from walk(v, pref + [ArrIdx("$root", i)])
             else:
                 if JSONSource._is_number(n):
+                    # ``_count_decimals`` expects the original representation to
+                    # determine the number of fractional digits.  Converting an
+                    # integer to ``float`` first would always introduce a ".0"
+                    # and therefore report one decimal place for integers.
                     fv = float(n)
-                    yield (Path(pref.copy()), fv, JSONSource._count_decimals(fv))
+                    yield (Path(pref.copy()), fv, JSONSource._count_decimals(n))
         yield from walk(self.root, [])
 
     def index_widths(self) -> Dict[str, int]:

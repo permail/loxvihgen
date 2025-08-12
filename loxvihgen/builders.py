@@ -45,6 +45,10 @@ class JSONCheckStringBuilder(CheckStringBuilder):
                 else:
                     parts.append(f"{i}&quot;{t.key}&quot;:[{i}")
                 parts.append("\\i{\\i" * (t.idx + 1))
+        # terminate the check string with the literal sequence "\\v" as
+        # required by Loxone's special format.  Using a single "\v" would emit
+        # the vertical-tab control character instead of the expected
+        # backslash + ``v`` pair stored in configuration files.
         parts.append("\\v")
         return "".join(parts)
 
@@ -57,6 +61,8 @@ class XMLCheckStringBuilder(CheckStringBuilder):
                 parts.append(f"{i}&lt;{t.key}&gt;{i}")
             elif isinstance(t, ArrIdx):
                 parts.append((f"{i}&lt;{t.key}&gt;{i}") * (t.idx + 1))
+        # As with JSONCheckStringBuilder we append the literal "\\v" sequence
+        # rather than the control character.
         parts.append("\\v")
         return "".join(parts)
 
