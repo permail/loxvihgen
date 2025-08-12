@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loxvihgen"
+version = "2.3.0"
+description = "Generate Loxone Virtual HTTP (VIH) templates from JSON/XML web-service responses"
+readme = "README.md"
+authors = [{ name = "Your Name" }]
+license = { text = "GPL-3.0-only" }
+keywords = ["loxone", "virtual input", "smart home", "xml", "json"]
+requires-python = ">=3.10"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: OS Independent",
+]
+
+[project.scripts]
+loxvihgen = "loxvihgen.cli:main"
+
+[tool.setuptools]
+packages = ["loxvihgen"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+loxvihgen = ["py.typed"]
