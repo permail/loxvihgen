@@ -9,7 +9,6 @@ class ViHttpXmlRenderer:
 
     @staticmethod
     def _xml_attr_escape(s: str) -> str:
-        # Minimal escape for attributes; commands provide &quot;/&lt; already
         return (s.replace("&", "&amp;")
                  .replace("\"", "&quot;")
                  .replace("<", "&lt;")

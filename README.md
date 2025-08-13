@@ -59,7 +59,7 @@ loxvihgen all    PROJECT -u URL
 ## Examples
 See the [`examples/`](examples) folder:
 - `examples/openweather/` – One Call API response + rules + manifest
-- `examples/shelly-plug/` – Shelly Plug sample + rules + manifest
+- `examples/shelly_plug/` – Shelly Plug sample + rules + manifest
 
 ## Contributing
 PRs welcome. Please:
