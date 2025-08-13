@@ -22,7 +22,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     pb = sub.add_parser("build", help="Build VI XML from project's response (+rules)")
     pb.add_argument("project")
     pb.add_argument("--title")
-    pb.add_argument("--prefix", action="append", default=[], help="Prefix for command titles (repeatable)")
+    pb.add_argument("--prefix", action="append", default=[], help="Prefix for command titles; repeat to build multiple prefixed outputs")
     pb.add_argument("--name-separator", dest="sep", default=None, help="Separator between path elements in command titles")
     pb.add_argument("--polling-time", dest="poll", type=int, default=None, help="Polling interval in seconds")
     pb.add_argument("--address-url", default=None, help="Service URL stored in XML")

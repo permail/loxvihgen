@@ -27,3 +27,16 @@ def test_cmd_build_missing_response(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert exit_code == 6
     assert "response missing" in captured.out
+
+
+def test_cmd_build_multiple_prefixes(tmp_path, monkeypatch):
+    project = "proj"
+    resp = tmp_path / f"{project}.response.json"
+    resp.write_text('{"a": 1}')
+    monkeypatch.chdir(tmp_path)
+    exit_code = cmd_build(project, title=None, prefixes=["p1", "p2"], sep=".", poll=None, address_url=None, output=None)
+    assert exit_code == 0
+    xml1 = (tmp_path / "VI_proj--p1.xml").read_text()
+    xml2 = (tmp_path / "VI_proj--p2.xml").read_text()
+    assert 'VirtualInHttpCmd Title="p1.a"' in xml1
+    assert 'VirtualInHttpCmd Title="p2.a"' in xml2
