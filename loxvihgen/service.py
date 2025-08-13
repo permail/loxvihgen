@@ -35,8 +35,9 @@ def _full_comment(input_path: Optional[Path], output_path: Optional[Path], rules
 
 
 def _resolve_paths_and_adapter(project: str, m: Dict[str, Any]) -> tuple[FormatAdapter, Rules, Path, Path]:
-    resp_path = Path(m.get("source", {}).get("response") or "")
-    if not resp_path.exists():
+    resp_str = m.get("source", {}).get("response")
+    resp_path = Path(resp_str) if resp_str else None
+    if not resp_path or not resp_path.is_file():
         guess = response_guess_path(project)
         if not guess:
             raise FileNotFoundError
@@ -125,7 +126,9 @@ def cmd_rules(project: str, force: bool) -> int:
     if not resp_path or not resp_path.is_file():
         guess = response_guess_path(project)
         if not guess:
-            logger.error("response missing. Expected %s.response.json or %s.response.xml", project, project)
+            msg = f"response missing. Expected {project}.response.json or {project}.response.xml"
+            logger.error(msg)
+            print(msg)
             return 6
         resp_path = guess
     text = resp_path.read_text(encoding="utf-8")
@@ -156,7 +159,9 @@ def cmd_build(project: str, title: Optional[str], prefixes: List[str], sep: Opti
     try:
         adapter, rules, resp_path, rules_path = _resolve_paths_and_adapter(project, m)
     except FileNotFoundError:
-        logger.error("response missing. Expected %s.response.json or %s.response.xml", project, project)
+        msg = f"response missing. Expected {project}.response.json or {project}.response.xml"
+        logger.error(msg)
+        print(msg)
         return 6
 
     b = m.get("build", {})
