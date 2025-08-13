@@ -40,12 +40,31 @@ loxvihgen all    PROJECT -u URL
    ```
 3. Build XML:
    ```bash
-   loxvihgen build weather --name-separator '.' --prefix plug1 --title 'Shelly'
+   loxvihgen build shelly_plug --name-separator '.' --prefix plug-1 --title 'Shelly Plug'
    ```
+
+### Prefixes
+
+`loxvihgen` can generate multiple sets of commands from the same response by
+prefixing their titles. This is handy when you have several identical devices
+and want their commands to remain distinct in Loxone.
+
+To build for more than one device at once, repeat `--prefix`:
+
+```bash
+loxvihgen build shelly_plug --prefix plug-1 --prefix plug-2
+```
+
+The above creates `VI_shelly_plug--plug-1.xml` and `VI_shelly_plug--plug-2.xml`, each
+containing commands such as `plug-1 …` and `plug-2 …`.
+
+Instead of passing them on the command line, prefixes may also be stored in the
+project manifest (`PROJECT.vih.json`) under the `prefixes` key. Subsequent
+`loxvihgen build PROJECT` invocations will then use those values automatically.
 
 ### Rules format (`project.rules.json`)
 ```json
-{ 
+{
   "overrides": [
     { "pattern": "temp", "unit": "°C" },
     { "pattern": "temp.min", "unit": "°C" },
