@@ -1,0 +1,17 @@
+{
+  "project": "openweathermap.org_onecallapi",
+  "source": {
+    "url": null,
+    "response": null
+  },
+  "rules": "openweathermap.org_onecallapi.rules.json",
+  "build": {
+    "title": "openweathermap.org_onecallapi",
+    "name_separator": " ",
+    "polling_time": 600,
+    "address_url": "https://api.openweathermap.org/data/3.0/onecall?lang=de&units=metric&lat=48.203&lon=14.397&appid=19b05754a52e5083fb882aa09320f4d3"
+  },
+  "prefixes": [
+    "owm"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+    "overrides": [
+        {"pattern": "dew_point", "unit": "°C"},
+        {"pattern": "feels_like", "unit": "°C"},
+        {"pattern": "feels_like.day", "unit": "°C"},
+        {"pattern": "feels_like.eve", "unit": "°C"},
+        {"pattern": "feels_like.morn", "unit": "°C"},
+        {"pattern": "feels_like.night", "unit": "°C"},
+        {"pattern": "pressure", "unit": "mbar"},
+        {"pattern": "temp", "unit": "°C"},
+        {"pattern": "temp.day", "unit": "°C"},
+        {"pattern": "temp.eve", "unit": "°C"},
+        {"pattern": "temp.max", "unit": "°C"},
+        {"pattern": "temp.min", "unit": "°C"},
+        {"pattern": "temp.morn", "unit": "°C"},
+        {"pattern": "temp.night", "unit": "°C"},
+        {"pattern": "humidity", "unit": "%"},
+        {"pattern": "rain", "unit": "mm"},
+        {"pattern": "visibility", "unit": "m"},
+        {"pattern": "wind_deg", "unit": "°"},
+        {"pattern": "wind_speed", "unit": "m/s"},
+        {"pattern": "wind_gust", "unit": "m/s"},
+        {"pattern": "pop", "unit": "%"}
+    ]
+}
