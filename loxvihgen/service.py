@@ -120,8 +120,9 @@ def cmd_fetch(project: str, url: Optional[str]) -> int:
 
 def cmd_rules(project: str, force: bool) -> int:
     m = load_manifest(project)
-    resp_path = Path(m.get("source", {}).get("response") or "")
-    if not resp_path.exists():
+    resp_str = m.get("source", {}).get("response")
+    resp_path = Path(resp_str) if resp_str else None
+    if not resp_path or not resp_path.is_file():
         guess = response_guess_path(project)
         if not guess:
             logger.error("response missing. Expected %s.response.json or %s.response.xml", project, project)
@@ -157,6 +158,18 @@ def cmd_build(project: str, title: Optional[str], prefixes: List[str], sep: Opti
     except FileNotFoundError:
         logger.error("response missing. Expected %s.response.json or %s.response.xml", project, project)
         return 6
+
+    b = m.get("build", {})
+    eff_title = title or b.get("title") or project
+    eff_sep = sep if sep is not None else b.get("name_separator", " ")
+    eff_poll = int(poll if poll is not None else b.get("polling_time", DEFAULT_POLL))
+    eff_addr = address_url or b.get("address_url") or m.get("source", {}).get("url") or "http://..."
+
+    prefix_list: List[str] = prefixes if prefixes else list(m.get("prefixes", []))
+    if not prefix_list:
+        prefix_list = [""]
+
+    renderer = ViHttpXmlRenderer()
 
     eff_title, eff_sep, eff_poll, eff_addr, prefix_list = _effective_params(project, m, title, prefixes, sep, poll, address_url)
 

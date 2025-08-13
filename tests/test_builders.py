@@ -1,5 +1,6 @@
 from loxvihgen.core import ObjKey, ArrIdx, Path
 from loxvihgen.builders import TitleBuilder, JSONCheckStringBuilder, XMLCheckStringBuilder
+from loxvihgen.service import cmd_build
 
 widths = {"b": 2}
 
@@ -17,3 +18,12 @@ def test_xml_check_string():
     p = Path([ObjKey("root"), ArrIdx("item", 2), ObjKey("value")])
     chk = XMLCheckStringBuilder().build(p)
     assert '\\i&lt;root&gt;\\i' in chk and chk.endswith('\\v')
+
+
+def test_cmd_build_missing_response(tmp_path, monkeypatch, capsys):
+    project = "proj"
+    monkeypatch.chdir(tmp_path)
+    exit_code = cmd_build(project, title=None, prefixes=[], sep=None, poll=None, address_url=None, output=None)
+    captured = capsys.readouterr()
+    assert exit_code == 6
+    assert "response missing" in captured.out
