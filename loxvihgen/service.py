@@ -73,8 +73,9 @@ def cmd_fetch(project: str, url: Optional[str]) -> int:
 
 def cmd_rules(project: str, force: bool) -> int:
     m = load_manifest(project)
-    resp_path = Path(m.get("source", {}).get("response") or "")
-    if not resp_path.exists():
+    resp_str = m.get("source", {}).get("response")
+    resp_path = Path(resp_str) if resp_str else None
+    if not resp_path or not resp_path.is_file():
         guess = response_guess_path(project)
         if not guess:
             print(f"Error: response missing. Expected {project}.response.json or {project}.response.xml")
@@ -105,8 +106,9 @@ def cmd_rules(project: str, force: bool) -> int:
 
 def cmd_build(project: str, title: Optional[str], prefixes: List[str], sep: Optional[str], poll: Optional[int], address_url: Optional[str], output: Optional[Path]) -> int:
     m = load_manifest(project)
-    resp_path = Path(m.get("source", {}).get("response") or "")
-    if not resp_path.exists():
+    resp_str = m.get("source", {}).get("response")
+    resp_path = Path(resp_str) if resp_str else None
+    if not resp_path or not resp_path.is_file():
         guess = response_guess_path(project)
         if not guess:
             print(f"Error: response missing. Expected {project}.response.json or {project}.response.xml")
