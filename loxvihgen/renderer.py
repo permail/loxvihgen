@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 from __future__ import annotations
+import html
 from typing import List
 from .builders import Command
 
@@ -9,10 +10,8 @@ class ViHttpXmlRenderer:
 
     @staticmethod
     def _xml_attr_escape(s: str) -> str:
-        return (s.replace("&", "&amp;")
-                 .replace("\"", "&quot;")
-                 .replace("<", "&lt;")
-                 .replace(">", "&gt;"))
+        """Escape special characters for use in XML attributes."""
+        return html.escape(s, quote=True)
 
     def render(self, commands: List[Command], title: str, address_url: str, polling_time: int, comment_json: str) -> str:
         title_attr = self._xml_attr_escape(title)
@@ -29,7 +28,7 @@ class ViHttpXmlRenderer:
                 "	<VirtualInHttpCmd "
                 f"Title=\"{self._xml_attr_escape(c.title)}\" "
                 f"Unit=\"{unit_attr}\" "
-                f"Check=\"{c.check}\" "  # check string contains &quot; and &lt; already
+                f"Check=\"{c.check}\" "
                 f"Signed=\"true\" Analog=\"true\" "
                 f"SourceValLow=\"0\" DestValLow=\"0\" "
                 f"SourceValHigh=\"100\" DestValHigh=\"100\" "

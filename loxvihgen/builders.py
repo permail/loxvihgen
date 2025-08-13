@@ -30,41 +30,42 @@ class TitleBuilder:
 
 class CheckStringBuilder:
     def build(self, path: Path) -> str:
+        parts: List[str] = []
+        for t in path.tokens:
+            if isinstance(t, ObjKey):
+                parts.append(self._for_obj(t.key))
+            elif isinstance(t, ArrIdx):
+                parts.append(self._for_arr(t.key, t.idx))
+        parts.append("\\v")
+        return "".join(parts)
+
+    def _for_obj(self, key: str) -> str:
+        raise NotImplementedError
+
+    def _for_arr(self, key: str, idx: int) -> str:
         raise NotImplementedError
 
 class JSONCheckStringBuilder(CheckStringBuilder):
-    def build(self, path: Path) -> str:
-        parts: List[str] = []
+    def _for_obj(self, key: str) -> str:
         i = "\\i"
-        for t in path.tokens:
-            if isinstance(t, ObjKey):
-                parts.append(f"{i}&quot;{t.key}&quot;:{i}")
-            elif isinstance(t, ArrIdx):
-                if t.key == "$root":
-                    parts.append("\\i[" + i)
-                else:
-                    parts.append(f"{i}&quot;{t.key}&quot;:[{i}")
-                parts.append("\\i{\\i" * (t.idx + 1))
-        # terminate the check string with the literal sequence "\\v" as
-        # required by Loxone's special format.  Using a single "\v" would emit
-        # the vertical-tab control character instead of the expected
-        # backslash + ``v`` pair stored in configuration files.
-        parts.append("\\v")
-        return "".join(parts)
+        return f"{i}&quot;{key}&quot;:{i}"
+
+    def _for_arr(self, key: str, idx: int) -> str:
+        i = "\\i"
+        if key == "$root":
+            start = "\\i[" + i
+        else:
+            start = f"{i}&quot;{key}&quot;:[{i}"
+        return start + "\\i{\\i" * (idx + 1)
 
 class XMLCheckStringBuilder(CheckStringBuilder):
-    def build(self, path: Path) -> str:
-        parts: List[str] = []
+    def _for_obj(self, key: str) -> str:
         i = "\\i"
-        for t in path.tokens:
-            if isinstance(t, ObjKey):
-                parts.append(f"{i}&lt;{t.key}&gt;{i}")
-            elif isinstance(t, ArrIdx):
-                parts.append((f"{i}&lt;{t.key}&gt;{i}") * (t.idx + 1))
-        # As with JSONCheckStringBuilder we append the literal "\\v" sequence
-        # rather than the control character.
-        parts.append("\\v")
-        return "".join(parts)
+        return f"{i}&lt;{key}&gt;{i}"
+
+    def _for_arr(self, key: str, idx: int) -> str:
+        i = "\\i"
+        return (f"{i}&lt;{key}&gt;{i}") * (idx + 1)
 
 class VIHBuilder:
     def __init__(self, source, title_builder: TitleBuilder, rules: Rules, check_builder: CheckStringBuilder):

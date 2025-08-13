@@ -5,6 +5,13 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 from .core import ObjKey, ArrIdx, Path, PathToken
 
+
+def _count_decimals(val: float) -> int:
+    s = str(val)
+    if "e" in s or "E" in s:
+        s = format(val, ".12f").rstrip("0").rstrip(".")
+    return len(s.split(".")[1]) if "." in s else 0
+
 NumberLeaf = Tuple[Path, float, int]  # (path, value, decimals)
 
 class HierSource:
@@ -26,13 +33,6 @@ class JSONSource(HierSource):
     @staticmethod
     def _is_number(x: Any) -> bool:
         return isinstance(x, (int, float)) and not isinstance(x, bool)
-
-    @staticmethod
-    def _count_decimals(val: float) -> int:
-        s = str(val)
-        if "e" in s or "E" in s:
-            s = format(val, ".12f").rstrip("0").rstrip(".")
-        return len(s.split(".")[1]) if "." in s else 0
 
     @staticmethod
     def _calc_widths(node: Any) -> Dict[str, int]:
@@ -71,7 +71,7 @@ class JSONSource(HierSource):
                     # integer to ``float`` first would always introduce a ".0"
                     # and therefore report one decimal place for integers.
                     fv = float(n)
-                    yield (Path(pref.copy()), fv, JSONSource._count_decimals(n))
+                    yield (Path(pref.copy()), fv, _count_decimals(n))
         yield from walk(self.root, [])
 
     def index_widths(self) -> Dict[str, int]:
@@ -97,13 +97,6 @@ class XMLSource(HierSource):
             return None
 
     @staticmethod
-    def _count_decimals(val: float) -> int:
-        s = str(val)
-        if "e" in s or "E" in s:
-            s = format(val, ".12f").rstrip("0").rstrip(".")
-        return len(s.split(".")[1]) if "." in s else 0
-
-    @staticmethod
     def _calc_widths(elem: ET.Element) -> Dict[str, int]:
         lengths: Dict[str, int] = {}
         def walk(e: ET.Element):
@@ -125,7 +118,7 @@ class XMLSource(HierSource):
             if not children:
                 num = XMLSource._try_parse_number(e.text)
                 if num is not None:
-                    yield (Path(pref + [ObjKey(e.tag)]), num, XMLSource._count_decimals(num))
+                    yield (Path(pref + [ObjKey(e.tag)]), num, _count_decimals(num))
                 return
             groups: Dict[str, List[ET.Element]] = {}
             for ch in children:

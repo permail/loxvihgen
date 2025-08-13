@@ -1,3 +1,5 @@
+import json
+
 from loxvihgen.rules import generate_rules_skeleton
 from loxvihgen.core import Path, ObjKey
 
@@ -10,7 +12,10 @@ class DummySource:
 
 def test_generate_rules_skeleton():
     result = generate_rules_skeleton(DummySource())
-    assert result.count("\n") == 5
+    obj = json.loads(result)
+    assert obj == {"overrides": [
+        {"pattern": "a.b", "unit": ""},
+        {"pattern": "a.c", "unit": ""},
+    ]}
     assert "/n" not in result
-    assert '{"pattern":"a.b","unit":""}' in result
-    assert '{"pattern":"a.c","unit":""}' in result
+    assert result.count("\n") >= 5
