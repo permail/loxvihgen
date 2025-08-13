@@ -1,0 +1,15 @@
+{
+  "project": "sgs",
+  "source": {
+    "url": "http://192.168.0.227/rpc/Shelly.GetStatus",
+    "response": "sgs.response.json"
+  },
+  "rules": "sgs.rules.json",
+  "build": {
+    "title": "sgs",
+    "name_separator": " ",
+    "polling_time": 1200,
+    "address_url": "http://192.168.0.227/rpc/Shelly.GetStatus"
+  },
+  "prefixes": []
+}

@@ -9,7 +9,7 @@ description = "Generate Loxone Virtual HTTP (VIH) templates from JSON/XML web-se
 readme = "README.md"
 authors = [{ name = "Your Name" }]
 license = { text = "GPL-3.0-only" }
-keywords = ["loxone", "virtual input", "smart home", "xml", "json"]
+keywords = ["loxone", "virtual input", "smart home", "xml", "json", "http"]
 requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
