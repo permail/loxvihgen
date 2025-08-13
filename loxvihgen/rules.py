@@ -63,4 +63,4 @@ def generate_rules_skeleton(source) -> str:
         lines.append(f'    {{"pattern":"{p}","unit":""}}{comma}')
     lines.append("  ]")
     lines.append("}")
-    return "/n".join(lines)
+    return "\n".join(lines)
