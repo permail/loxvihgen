@@ -5,14 +5,16 @@ Generate Loxone Virtual HTTP (VIH) template XML from JSON/XML responses.
 - Input: JSON or XML sample (auto-detected)
 - Output: Loxone VirtualInHttp XML with one command per numeric leaf
 - Features: project-centric subcommands, rules (unit/format overrides), manifest, multi-prefix builds
+ 
+## Use Case
+Convert JSON or XML API responses into [Loxone](https://www.loxone.com/) VirtualInHttp commands.
+This tool extracts all numeric leaves and emits an XML template that can be
+imported into a Loxone project, allowing quick integration of third‑party
+services.
 
-## Install
-```bash
-pip install .
-# or: pipx install git+https://github.com/you/loxvihgen.git
-```
+## Usage
 
-## CLI
+### CLI
 ```text
 loxvihgen fetch  PROJECT [-u URL]
 loxvihgen rules  PROJECT [--force]
@@ -41,9 +43,9 @@ loxvihgen all    PROJECT -u URL
    loxvihgen build weather --name-separator '.' --prefix plug1 --title 'Shelly'
    ```
 
-## Rules format (`project.rules.json`)
+### Rules format (`project.rules.json`)
 ```json
-{
+{ 
   "overrides": [
     { "pattern": "temp", "unit": "°C" },
     { "pattern": "temp.min", "unit": "°C" },
@@ -56,10 +58,16 @@ loxvihgen all    PROJECT -u URL
 - Longest suffix match wins.
 - If `unit` starts with `<`, it is used as the **entire** Loxone format string.
 
-## Examples
+### Examples
 See the [`examples/`](examples) folder:
 - `examples/openweather/` – One Call API response + rules + manifest
 - `examples/shelly_plug/` – Shelly Plug sample + rules + manifest
+
+## Install
+```bash
+pip install .
+# or: pipx install git+https://github.com/you/loxvihgen.git
+```
 
 ## Contributing
 PRs welcome. Please:

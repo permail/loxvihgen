@@ -16,6 +16,8 @@ def test_full_pipeline_json(tmp_path: Path):
     tb = TitleBuilder(sep='.', prefix='pref', width_by_key=adapter.source.index_widths())
     vih = VIHBuilder(adapter.source, tb, rules, JSONCheckStringBuilder())
     cmds = vih.build_commands()
-    assert any(c.title.startswith('pref.a.b') for c in cmds)
+    assert len(cmds) == 2
+    assert {c.title for c in cmds} == {'pref.a.b[0].x', 'pref.a.b[1].x'}
+    assert all(c.unit == '<v.2>' for c in cmds)
     xml = ViHttpXmlRenderer().render(cmds, title='T', address_url='http://...', polling_time=1200, comment_json='')
-    assert '<VirtualInHttp' in xml and '</VirtualInHttp>' in xml
+    assert xml.count('<VirtualInHttpCmd') == 2

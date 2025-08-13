@@ -57,10 +57,5 @@ def generate_rules_skeleton(source) -> str:
             seen.add(pat)
             pats.append(pat)
     pats.sort()
-    lines = ["{", "  \"overrides\": ["]
-    for i, p in enumerate(pats):
-        comma = "," if i < len(pats) - 1 else ""
-        lines.append(f'    {{"pattern":"{p}","unit":""}}{comma}')
-    lines.append("  ]")
-    lines.append("}")
-    return "\n".join(lines)
+    data = {"overrides": [{"pattern": p, "unit": ""} for p in pats]}
+    return json.dumps(data, indent=2, separators=(",", ":"))

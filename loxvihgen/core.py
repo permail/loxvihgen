@@ -30,14 +30,3 @@ class Path:
 
     def suffix_keys(self) -> List[str]:
         return [t.key for t in self.tokens if getattr(t, "key", None) and t.key != "$root"]
-
-    def for_title(self, widths: dict[str,int], sep: str, prefix: str) -> str:
-        parts: List[str] = []
-        for t in self.tokens:
-            if isinstance(t, ArrIdx):
-                w = widths.get(t.key, 1)
-                parts.append(f"{t.key}[{t.idx:0{w}d}]")
-            else:
-                parts.append(t.key)
-        base = sep.join(parts)
-        return (f"{prefix}{sep}{base}" if prefix and base else (prefix or base))

@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 from __future__ import annotations
 import argparse
+import logging
 from pathlib import Path
 from typing import Optional, Sequence
 from .service import cmd_fetch, cmd_rules, cmd_build, cmd_all
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
+    logging.basicConfig(level=logging.INFO)
     p = argparse.ArgumentParser(prog="loxvihgen", description="Generate Loxone VI-HTTP XML from JSON/XML responses (project-centric)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
