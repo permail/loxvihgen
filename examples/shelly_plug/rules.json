@@ -1,0 +1,26 @@
+{
+  "overrides": [
+    { "pattern": "apower", "unit": "W" },
+    { "pattern": "voltage", "unit": "V" },
+    { "pattern": "freq", "unit": "Hz" },
+    { "pattern": "current", "unit": "A" },
+
+    { "pattern": "total", "unit": "kWh" },
+    { "pattern": "aenergy.total", "unit": "kWh" },
+    { "pattern": "aenergy.by_minute", "unit": "kWh" },
+    { "pattern": "ret_aenergy.total", "unit": "kWh" },
+    { "pattern": "ret_aenergy.by_minute", "unit": "kWh" },
+    { "pattern": "utc_offset", "unit": "s" },
+
+    { "pattern": "temperature.tC", "unit": "°C" },
+    { "pattern": "temperature.tF", "unit": "°F" },
+
+    { "pattern": "uptime", "unit": "s" },
+    { "pattern": "ram_size", "unit": "B" },
+    { "pattern": "ram_free", "unit": "B" },
+    { "pattern": "ram_min_free", "unit": "B" },
+    { "pattern": "fs_size", "unit": "B" },
+    { "pattern": "fs_free", "unit": "B" }
+
+  ]
+}

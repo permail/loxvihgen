@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: GPL-3.0-only
+from __future__ import annotations
+
+import html
+from typing import List
+
+from .builders import Command
+
+
+class ViHttpXmlRenderer:
+    def __init__(self, miniserver_min_version: str = "16000610"):
+        self.miniserver_min_version = miniserver_min_version
+
+    @staticmethod
+    def _xml_attr_escape(s: str) -> str:
+        """Escape special characters for use in XML attributes."""
+        return html.escape(s, quote=True)
+
+    def render(
+        self,
+        commands: List[Command],
+        title: str,
+        address_url: str,
+        polling_time: int,
+        comment_json: str,
+    ) -> str:
+        title_attr = self._xml_attr_escape(title)
+        addr_attr = self._xml_attr_escape(address_url)
+        comment_attr = self._xml_attr_escape(comment_json) if comment_json else ""
+        lines: List[str] = []
+        if comment_json:
+            lines.append(f"<!-- {comment_json} -->")
+        lines.append(
+            "<VirtualInHttp "
+            f"Title=\"{title_attr}\" "
+            f"Comment=\"{comment_attr}\" "
+            f"Address=\"{addr_attr}\" "
+            "HintText=\"\" "
+            f"PollingTime=\"{polling_time}\">"
+        )
+        lines.append(f"	<Info templateType=\"2\" minVersion=\"{self.miniserver_min_version}\"/>")
+        for c in commands:
+            unit_attr = self._xml_attr_escape(c.unit)
+            lines.append(
+                "	<VirtualInHttpCmd "
+                f"Title=\"{self._xml_attr_escape(c.title)}\" "
+                f"Unit=\"{unit_attr}\" "
+                f"Check=\"{c.check}\" "
+                f"Signed=\"true\" Analog=\"true\" "
+                f"SourceValLow=\"0\" DestValLow=\"0\" "
+                f"SourceValHigh=\"100\" DestValHigh=\"100\" "
+                f"Comment=\"\"/>"
+            )
+        lines.append("</VirtualInHttp>")
+        body = "\n".join(lines) + "\n"
+        return f"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n{body}"

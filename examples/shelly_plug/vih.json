@@ -1,0 +1,15 @@
+{
+  "project": "shelly_plug",
+  "source": {
+    "url": null,
+    "response": "response.json"
+  },
+  "rules": "rules.json",
+  "build": {
+    "title": "shelly_plug",
+    "name_separator": " ",
+    "polling_time": 1200,
+    "address_url": "http://shelly-device.invalid/rpc/Shelly.GetStatus"
+  },
+  "prefixes": []
+}

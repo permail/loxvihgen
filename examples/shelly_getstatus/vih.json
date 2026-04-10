@@ -1,0 +1,15 @@
+{
+  "project": "shelly_getstatus",
+  "source": {
+    "url": null,
+    "response": "response.json"
+  },
+  "rules": "rules.json",
+  "build": {
+    "title": "shelly_getstatus",
+    "name_separator": " ",
+    "polling_time": 1200,
+    "address_url": null
+  },
+  "prefixes": []
+}
